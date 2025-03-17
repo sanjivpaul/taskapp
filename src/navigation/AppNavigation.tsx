@@ -4,15 +4,24 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Home from "../screens/home/Home";
 import Login from "../screens/login/Login";
 import SignUp from "../screens/signup/SignUp";
+import { useSelector } from "react-redux";
 
 const Stack = createNativeStackNavigator();
 const AppNavigation = () => {
+  const userData = useSelector((state: any) => state.auth?.userData);
+  console.log("userData", userData);
+
   const [isLoggedIn, setisLoggedIn] = useState(false);
+
   return (
     <Stack.Navigator>
-      {isLoggedIn ? (
+      {Object.keys(userData)?.length > 0 ? (
         <>
-          <Stack.Screen name="HomeScreen" component={Home} />
+          <Stack.Screen
+            name="HomeScreen"
+            component={Home}
+            options={{ headerTitle: "Tasks", headerTitleAlign: "center" }}
+          />
         </>
       ) : (
         <>
