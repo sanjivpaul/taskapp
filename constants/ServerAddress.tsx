@@ -1,1 +1,1 @@
-export const serverAddress = "http://192.168.1.6:3000";
+export const serverAddress = "http://192.168.73.143:3000";
