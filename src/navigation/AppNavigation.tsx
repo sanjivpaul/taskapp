@@ -5,6 +5,8 @@ import Home from "../screens/home/Home";
 import Login from "../screens/login/Login";
 import SignUp from "../screens/signup/SignUp";
 import { useSelector } from "react-redux";
+import TaskDetailScreen from "../screens/home/TaskDetailScreen";
+import TaskCreateScreen from "../screens/home/TaskCreateScreen";
 
 const Stack = createNativeStackNavigator();
 const AppNavigation = () => {
@@ -21,6 +23,22 @@ const AppNavigation = () => {
             name="HomeScreen"
             component={Home}
             options={{ headerTitle: "Tasks", headerTitleAlign: "center" }}
+          />
+          <Stack.Screen
+            name="TaskDetailScreen"
+            component={TaskDetailScreen}
+            options={{
+              headerTitle: "Tasks Details",
+              headerTitleAlign: "center",
+            }}
+          />
+          <Stack.Screen
+            name="TaskCreateScreen"
+            component={TaskCreateScreen}
+            options={{
+              headerTitle: "Add Task",
+              headerTitleAlign: "center",
+            }}
           />
         </>
       ) : (

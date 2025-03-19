@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
 interface CustomCheckboxProps {
   checked: boolean;
-  onToggle: () => void; // Event handler for toggling
+  onToggle: () => void;
 }
 
 const CustomCheckbox: React.FC<CustomCheckboxProps> = ({
@@ -12,12 +12,7 @@ const CustomCheckbox: React.FC<CustomCheckboxProps> = ({
 }) => {
   return (
     <TouchableOpacity style={styles.checkboxContainer} onPress={onToggle}>
-      <View
-        style={[
-          styles.checkbox,
-          checked && styles.checked, // Add checked style
-        ]}
-      >
+      <View style={[styles.checkbox, checked && styles.checked]}>
         {checked && <View style={styles.checkmark} />}
       </View>
     </TouchableOpacity>
@@ -35,19 +30,21 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderWidth: 2,
-    borderColor: "#4CAF50", // Green border
+    borderColor: "#4CAF50",
     borderRadius: 4,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "transparent", // Transparent background when unchecked
+    backgroundColor: "transparent",
   },
   checked: {
-    backgroundColor: "#4CAF50", // Green background when checked
+    // backgroundColor: "#4CAF50",
+    backgroundColor: "tomato",
+    borderColor: "tomato",
   },
   checkmark: {
     width: 12,
     height: 12,
-    backgroundColor: "#fff", // White checkmark
+    backgroundColor: "#fff",
     borderRadius: 2,
   },
 });
