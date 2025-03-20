@@ -7,12 +7,16 @@ import {
   TouchableOpacity,
   FlatList,
   SafeAreaView,
+  Dimensions,
 } from "react-native";
 import axios from "axios";
 import { serverAddress } from "@/constants/ServerAddress";
 import CustomCheckbox from "@/components/checkbox/CustomCheckbox"; // Assuming CustomCheckbox is imported from components
-import { useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
+import { useDispatch, useSelector } from "react-redux";
+import { setUserData } from "@/redux/features/auth/AuthSlice";
+import Feather from "@expo/vector-icons/Feather";
 
 interface Task {
   _id: string;
@@ -113,17 +117,24 @@ const data = [
   },
 ];
 
+const { height, width } = Dimensions.get("window");
+
 const Home: React.FC = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const userData = useSelector((state: any) => state.auth?.userData);
+  const accessToken = userData?.accessToken;
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [refresh, setRefresh] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const getTasks = async () => {
     try {
-      const response = await axios.get(`${serverAddress}/tasks`, {
+      const response = await axios.get(`${serverAddress}tasks`, {
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
@@ -137,25 +148,33 @@ const Home: React.FC = () => {
       }
     } catch (error) {
       console.log("Get Tasks Error:", error);
-      Alert.alert("Error", "Failed to fetch tasks");
+      if (error.response) {
+        Alert.alert(
+          "Error",
+          error.response?.data?.message || "Failed to fetch tasks"
+        );
+      } else {
+        Alert.alert("Error", "Failed to fetch tasks");
+      }
     }
   };
 
   const taskStatusUpdate = async (id: any) => {
     try {
       const response = await axios.put(
-        `${serverAddress}/tasks/${id}`,
+        `${serverAddress}tasks/${id}`,
         {
-          status: "done",
+          status: "completed",
         },
         {
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
           },
         }
       );
 
-      console.log("update resp===>", response);
+      // console.log("update resp===>", response);
     } catch (error) {
       console.log("Update Status Error:", error);
       Alert.alert("Error", "Failed to update tasks");
@@ -172,10 +191,6 @@ const Home: React.FC = () => {
 
   const handleCardPress = (taskId: string) => {
     navigation.navigate("TaskDetailScreen", { taskId });
-
-    // console.log("Task card clicked, taskId: ", taskId);
-
-    // Alert.alert("Task Details", `Opening details for task ID: ${taskId}`);
   };
 
   const onRefresh = async () => {
@@ -184,9 +199,21 @@ const Home: React.FC = () => {
     setRefreshing(false);
   };
 
-  useEffect(() => {
-    getTasks();
-  }, [refresh]);
+  // useEffect(() => {
+  //   getTasks();
+  // }, [refresh]);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      getTasks(); // Get tasks when the screen is focused
+    }, [refresh])
+  );
+
+  const formattedDate = (date: any) => {
+    const options = { day: "2-digit", month: "long" };
+    const dateObj = new Date(date.split("/").reverse().join("-"));
+    return dateObj.toLocaleDateString("en-GB", options);
+  };
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -202,7 +229,7 @@ const Home: React.FC = () => {
             >
               <View style={styles.taskCard}>
                 <CustomCheckbox
-                  checked={item.status === "done"}
+                  checked={item.status === "completed"}
                   onToggle={() => {
                     toggleTaskCompletion(item._id);
                     taskStatusUpdate(item._id);
@@ -210,24 +237,79 @@ const Home: React.FC = () => {
                   }}
                 />
 
-                <View style={{ flexDirection: "column" }}>
-                  <Text
-                    style={[
-                      styles.taskText,
-                      item.status === "done" && styles.completedText,
-                    ]}
-                  >
-                    {item.title}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.descText,
-                      item.status === "done" && styles.completedText,
-                    ]}
-                  >
-                    {item.description}
-                  </Text>
-                  <Text>{item.status}</Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    width: "90%",
+                  }}
+                >
+                  <View style={{ flexDirection: "column" }}>
+                    <Text
+                      style={[
+                        styles.taskText,
+                        item.status === "completed" && styles.completedText,
+                      ]}
+                    >
+                      {item.title}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.descText,
+                        item.status === "completed" && styles.completedText,
+                      ]}
+                    >
+                      {item.description}
+                    </Text>
+                    {/* <Text>{item.status}</Text> */}
+                  </View>
+
+                  <View style={{ flexDirection: "row" }}>
+                    {/* <View
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: 15,
+                        borderStyle: "dashed",
+                        borderWidth: 1,
+                        borderColor: "grey",
+
+                        justifyContent: "center",
+                        alignItems: "center",
+                        marginRight: 10,
+                      }}
+                    >
+                      <Feather name="calendar" size={18} color="black" />
+                    </View> */}
+                    <View>
+                      <Text
+                        style={{
+                          fontWeight: "500",
+                          fontSize: 13,
+                          textAlign: "right",
+                        }}
+                      >
+                        Due Date
+                      </Text>
+                      <Text style={{ fontSize: 12, textAlign: "right" }}>
+                        {formattedDate(item.due_date)}
+                      </Text>
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          borderColor:
+                            item.status == "completed" ? "green" : "orange",
+                          borderWidth: 1,
+                          borderRadius: 10,
+                          paddingHorizontal: 7,
+                          alignSelf: "center",
+                          marginTop: 5,
+                        }}
+                      >
+                        {item.status == "completed" ? "Done" : "In Progress"}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
               </View>
             </TouchableOpacity>
@@ -241,9 +323,9 @@ const Home: React.FC = () => {
       <View
         style={{
           position: "absolute",
-          bottom: 20,
+          bottom: height / 20,
           alignSelf: "flex-end",
-          right: 20,
+          right: height / 35,
         }}
       >
         <TouchableOpacity
@@ -251,7 +333,7 @@ const Home: React.FC = () => {
             navigation.navigate("TaskCreateScreen");
           }}
           style={{
-            backgroundColor: "grey",
+            backgroundColor: "#4CAF50",
             width: 60,
             height: 60,
             borderRadius: 30,
@@ -270,7 +352,9 @@ const Home: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    // padding: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 15,
   },
   cardContainer: {
     marginBottom: 10,
@@ -289,6 +373,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 10,
     color: "#333",
+    fontWeight: "500",
   },
   descText: {
     fontSize: 14,
@@ -298,6 +383,25 @@ const styles = StyleSheet.create({
   completedText: {
     textDecorationLine: "line-through",
     color: "#aaa",
+  },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  usernameText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  logoutText: {
+    fontSize: 16,
+    color: "tomato",
   },
 });
 

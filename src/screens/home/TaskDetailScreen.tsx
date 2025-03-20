@@ -18,6 +18,8 @@ import Octicons from "@expo/vector-icons/Octicons";
 import Feather from "@expo/vector-icons/Feather";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import { Picker } from "@react-native-picker/picker"; // Import react-native-picker
+import { useSelector } from "react-redux";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 interface Task {
   _id: string;
@@ -31,11 +33,22 @@ interface Task {
 }
 
 const TaskDetailScreen: React.FC = () => {
+  const userData = useSelector((state: any) => state.auth?.userData);
+  const refreshToken = userData?.refreshToken;
+  const accessToken = userData?.accessToken;
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [priority, setPriority] = useState<string>("");
   const [status, setStatus] = useState<string>("");
   const [dueDate, setDueDate] = useState<string>("");
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const formatDate = (date: Date) => {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   const route = useRoute();
   const navigation = useNavigation();
@@ -45,9 +58,10 @@ const TaskDetailScreen: React.FC = () => {
   // Fetch task details
   const getTaskDetails = async () => {
     try {
-      const response = await axios.get(`${serverAddress}/tasks/${taskId}`, {
+      const response = await axios.get(`${serverAddress}tasks/${taskId}`, {
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
@@ -80,11 +94,12 @@ const TaskDetailScreen: React.FC = () => {
 
       setIsLoading(true);
       const response = await axios.put(
-        `${serverAddress}/tasks/${taskId}`,
+        `${serverAddress}tasks/${taskId}`,
         updatedTask,
         {
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
           },
         }
       );
@@ -106,13 +121,14 @@ const TaskDetailScreen: React.FC = () => {
   const deleteTask = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.delete(`${serverAddress}/tasks/${taskId}`, {
+      const response = await axios.delete(`${serverAddress}tasks/${taskId}`, {
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
-      if (response?.status === 200) {
+      if (response?.status === 201) {
         Alert.alert("Success", "Task deleted successfully");
         navigation.goBack();
       } else {
@@ -135,6 +151,12 @@ const TaskDetailScreen: React.FC = () => {
     );
   }
 
+  const onDateChange = (event: any, selectedDate: Date | undefined) => {
+    const currentDate = selectedDate || new Date();
+    setShowDatePicker(false);
+    setDueDate(formatDate(currentDate)); // Format the date and set it to the dueDate state
+  };
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
@@ -143,12 +165,13 @@ const TaskDetailScreen: React.FC = () => {
         {/* Description */}
         <View style={styles.card}>
           <View style={styles.row}>
-            <MaterialIcons name="description" size={24} color="black" />
+            {/* <MaterialIcons name="description" size={24} color="black" /> */}
             <TextInput
-              style={styles.input}
+              style={[styles.input, { height: 70 }]}
               value={task.description}
               multiline
               editable={false}
+              textAlignVertical="top"
             />
           </View>
         </View>
@@ -173,7 +196,7 @@ const TaskDetailScreen: React.FC = () => {
         {/* Status Dropdown */}
         <View style={styles.card}>
           <View style={styles.row}>
-            <Octicons name="checklist" size={24} color="black" />
+            <Octicons name="git-pull-request-draft" size={24} color="black" />
             <Text style={styles.cardText}>Status</Text>
           </View>
           <Picker
@@ -189,13 +212,24 @@ const TaskDetailScreen: React.FC = () => {
 
         {/* Due Date */}
         <View style={styles.card}>
-          <View style={styles.row}>
+          <TouchableOpacity
+            onPress={() => setShowDatePicker(true)}
+            style={styles.row}
+          >
             <Feather name="calendar" size={24} color="black" />
             <Text style={styles.cardText}>
               Due Date: {dueDate || "Select Due Date"}
             </Text>
-          </View>
-          {/* You can replace this with a date picker if required */}
+          </TouchableOpacity>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={new Date()}
+              mode="date"
+              display="default"
+              onChange={onDateChange}
+            />
+          )}
         </View>
 
         {/* Update and Delete Buttons */}

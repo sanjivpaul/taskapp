@@ -13,6 +13,7 @@ import { StackNavigationProp } from "@react-navigation/stack";
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserData } from "@/redux/features/auth/AuthSlice";
+import { serverAddress } from "@/constants/ServerAddress";
 
 // types/navigation.ts
 export type RootStackParamList = {
@@ -25,15 +26,15 @@ const Login = () => {
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const dispatch = useDispatch();
   const userData = useSelector((state: any) => state.auth?.userData);
-  console.log("userData", userData);
+  // console.log("userData", userData);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
 
-  console.log("email", email);
-  console.log("password", password);
+  // console.log("email", email);
+  // console.log("password", password);
 
   const userLogin = async () => {
     setIsLoading(true);
@@ -43,7 +44,7 @@ const Login = () => {
     }
     try {
       const response = await axios.post(
-        "http://192.168.1.6:3000/auth/login",
+        `${serverAddress}auth/login`,
         {
           email: email,
           password: password,
@@ -55,8 +56,8 @@ const Login = () => {
         }
       );
 
-      console.log("Login resp===>", response);
-      if (response?.status == 200) {
+      // console.log("Login resp===>", response);
+      if (response?.status == 201) {
         dispatch(setUserData(response?.data));
         setIsLoading(false);
         Alert.alert("Success", response?.data?.message);
@@ -70,8 +71,11 @@ const Login = () => {
   };
   return (
     <View style={styles.container}>
-      <Text style={{ fontSize: 22, marginVertical: 15 }}>
-        Login to your account
+      <Text style={{ fontSize: 26, fontWeight: "500", marginBottom: 20 }}>
+        My Task
+      </Text>
+      <Text style={{ fontSize: 16, marginVertical: 15 }}>
+        Login to your "My Task" account
       </Text>
       <View style={styles.inputFields}>
         <TextInput placeholder="Email" onChangeText={(val) => setEmail(val)} />
@@ -85,8 +89,6 @@ const Login = () => {
       <TouchableOpacity
         style={styles.buttonLogin}
         onPress={() => {
-          console.log("Hit");
-
           userLogin();
         }}
       >
@@ -125,7 +127,7 @@ const styles = StyleSheet.create({
   },
   buttonLogin: {
     width: "70%",
-    backgroundColor: "teal",
+    backgroundColor: "#0D92F4",
     padding: 10,
     borderRadius: 7,
     marginTop: 15,

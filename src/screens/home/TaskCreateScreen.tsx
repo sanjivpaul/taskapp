@@ -10,13 +10,27 @@ import {
 import { Picker } from "@react-native-picker/picker"; // Import the Picker
 import axios from "axios";
 import { serverAddress } from "@/constants/ServerAddress"; // Make sure this is correctly set up
+import { useSelector } from "react-redux";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 const TaskCreateScreen = ({ navigation }: { navigation: any }) => {
+  const userData = useSelector((state: any) => state.auth?.userData);
+  const refreshToken = userData?.refreshToken;
+  const accessToken = userData?.accessToken;
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("pending");
   const [priority, setPriority] = useState("low");
   const [dueDate, setDueDate] = useState("");
+  const [showDatePicker, setShowDatePicker] = useState(false); // State to show/hide DatePicker
+
+  // Format date as MM/DD/YYYY (You can change this format if needed)
+  const formatDate = (date: Date) => {
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   const handleCreateTask = async () => {
     if (!title || !description || !dueDate) {
@@ -26,7 +40,7 @@ const TaskCreateScreen = ({ navigation }: { navigation: any }) => {
 
     try {
       const response = await axios.post(
-        `${serverAddress}/tasks`,
+        `${serverAddress}tasks`,
         {
           title,
           description,
@@ -37,13 +51,14 @@ const TaskCreateScreen = ({ navigation }: { navigation: any }) => {
         {
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
           },
         }
       );
 
       if (response.status === 201) {
         Alert.alert("Success", "Task created successfully");
-        navigation.goBack(); // Go back to the home screen after successful task creation
+        navigation.goBack();
       } else {
         Alert.alert("Error", "Failed to create task");
       }
@@ -51,6 +66,12 @@ const TaskCreateScreen = ({ navigation }: { navigation: any }) => {
       console.error("Error creating task:", error);
       Alert.alert("Error", "Failed to create task");
     }
+  };
+
+  const onDateChange = (event: any, selectedDate: Date | undefined) => {
+    const currentDate = selectedDate || new Date();
+    setShowDatePicker(false);
+    setDueDate(formatDate(currentDate)); // Format the date and set it to the dueDate state
   };
 
   return (
@@ -65,11 +86,12 @@ const TaskCreateScreen = ({ navigation }: { navigation: any }) => {
       />
 
       <TextInput
-        style={styles.input}
+        style={[styles.input, { height: 100 }]}
         placeholder="Task Description"
         value={description}
         onChangeText={setDescription}
         multiline
+        textAlignVertical="top"
       />
 
       {/* Dropdown for Status */}
@@ -96,12 +118,28 @@ const TaskCreateScreen = ({ navigation }: { navigation: any }) => {
         <Picker.Item label="High" value="high" />
       </Picker>
 
-      <TextInput
+      {/* <TextInput
         style={styles.input}
         placeholder="Due Date (e.g., March 14, 2025)"
         value={dueDate}
         onChangeText={setDueDate}
-      />
+      /> */}
+
+      <TouchableOpacity
+        onPress={() => setShowDatePicker(true)}
+        style={[styles.input, { justifyContent: "center" }]}
+      >
+        <Text style={{}}>{dueDate ? dueDate : "Select Due Date"}</Text>
+      </TouchableOpacity>
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={new Date()}
+          mode="date"
+          display="default"
+          onChange={onDateChange}
+        />
+      )}
 
       <TouchableOpacity style={styles.button} onPress={handleCreateTask}>
         <Text style={styles.buttonText}>Create Task</Text>
@@ -146,7 +184,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   button: {
-    backgroundColor: "tomato",
+    backgroundColor: "#4CAF50",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
